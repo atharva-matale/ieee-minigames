@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fruit Ninja - Slice & Dice</title>
+    <meta name="description" content="Play Fruit Ninja in your browser! Slice fruits, avoid bombs, and score big combos. Use your phone as an air mouse motion controller from anywhere!">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- Connection Overlay -->
+    <div id="connectionOverlay" class="overlay">
+        <div class="overlay-content connect-screen">
+            <h1 class="game-title">🍉 FRUIT NINJA</h1>
+            <p class="subtitle">Slice & Dice Edition</p>
+            <div id="connectionStatus" class="connection-box">
+                <div class="spinner"></div>
+                <p>Generating room & controller code...</p>
+            </div>
+            <div id="qrSection" class="qr-section" style="display:none;">
+                <div class="qr-box">
+                    <img id="qrImage" width="180" height="180" alt="QR Code">
+                </div>
+                <p class="room-code-label">Room Code</p>
+                <div class="room-code" id="roomCodeDisplay">----</div>
+                <p class="scan-hint">Scan with your phone from ANY network / Wi-Fi</p>
+                <p class="url-hint" id="controllerUrl"></p>
+            </div>
+            <button id="playWithMouse" class="btn btn-secondary">
+                🖱️ Play with Mouse Instead
+            </button>
+        </div>
+    </div>
+
+    <!-- Calibration Overlay -->
+    <div id="calibrationOverlay" class="overlay" style="display:none;">
+        <div class="overlay-content">
+            <h1 class="game-title">🎯 CALIBRATION</h1>
+            <p class="subtitle">Hold phone pointing at center of screen</p>
+            <div class="connection-box" style="flex-direction:column; gap:12px;">
+                <p style="font-size:1.1rem; color:#fff;">Phone Connected!</p>
+                <p style="font-size:0.9rem; color:rgba(255,200,150,0.8);">Aim your phone at the screen in a comfortable position, then tap <strong>"Calibrate & Start"</strong> on your phone.</p>
+                <div class="spinner" style="margin-top:8px;"></div>
+            </div>
+            <button id="startAnywayBtn" class="btn btn-secondary" style="margin-top:10px;">
+                ▶️ Start Game Now
+            </button>
+        </div>
+    </div>
+
+    <!-- Game Over Overlay -->
+    <div id="gameOverOverlay" class="overlay" style="display:none;">
+        <div class="overlay-content game-over-screen">
+            <h1 class="game-over-title">GAME OVER</h1>
+            <div class="final-score-box">
+                <p class="final-score-label">Final Score</p>
+                <p class="final-score" id="finalScore">0</p>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-value" id="statSliced">0</span>
+                    <span class="stat-label">Sliced</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="statMissed">0</span>
+                    <span class="stat-label">Missed</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="statBestCombo">0</span>
+                    <span class="stat-label">Best Combo</span>
+                </div>
+            </div>
+            <button id="restartBtn" class="btn btn-primary">🔄 Play Again</button>
+        </div>
+    </div>
+
+    <!-- WebRTC PeerJS for direct global cross-network peer-to-peer connection -->
+    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>

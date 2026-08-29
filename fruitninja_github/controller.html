@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Fruit Ninja Controller</title>
+    <meta name="description" content="Phone motion air mouse controller for Fruit Ninja web game - Works anywhere on any network">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+    <style>
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: none;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            background: #0a0a0f;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            padding: 24px;
+            text-align: center;
+        }
+
+        /* ===== Join Screen ===== */
+        .join-screen {
+            background: radial-gradient(ellipse at center top, #1a0f2e 0%, #0a0a0f 70%);
+        }
+
+        .join-screen h1 {
+            font-family: 'Bangers', cursive;
+            font-size: 2.8rem;
+            color: #ff3d00;
+            text-shadow: 0 0 20px rgba(255,61,0,0.5), 2px 2px 0 #8b0000;
+            margin-bottom: 8px;
+        }
+
+        .join-screen .tagline {
+            color: rgba(255,200,150,0.5);
+            font-size: 0.85rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-bottom: 36px;
+        }
+
+        .input-group {
+            width: 100%;
+            max-width: 300px;
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            color: rgba(255,200,150,0.6);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+
+        .room-input {
+            width: 100%;
+            padding: 16px 20px;
+            background: rgba(255,255,255,0.06);
+            border: 2px solid rgba(255,61,0,0.2);
+            border-radius: 14px;
+            color: #fff;
+            font-family: 'Bangers', cursive;
+            font-size: 2rem;
+            text-align: center;
+            letter-spacing: 10px;
+            outline: none;
+            text-transform: uppercase;
+            transition: border-color 0.3s;
+        }
+
+        .room-input:focus {
+            border-color: rgba(255,61,0,0.6);
+        }
+
+        .room-input::placeholder {
+            color: rgba(255,200,150,0.2);
+            letter-spacing: 6px;
+            font-size: 1.4rem;
+        }
+
+        .join-btn {
+            width: 100%;
+            max-width: 300px;
+            padding: 16px;
+            background: linear-gradient(135deg, #ff3d00, #ff6d00);
+            border: none;
+            border-radius: 50px;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 6px 24px rgba(255,61,0,0.4);
+            transition: all 0.2s;
+        }
+
+        .join-btn:active {
+            transform: scale(0.96);
+        }
+
+        .status-msg {
+            margin-top: 16px;
+            color: rgba(255,200,150,0.5);
+            font-size: 0.85rem;
+            min-height: 20px;
+        }
+
+        .status-msg.error { color: #ff5252; }
+        .status-msg.success { color: #69f0ae; }
+
+        /* ===== Calibration Setup Screen ===== */
+        .calibration-screen {
+            display: none;
+            background: radial-gradient(ellipse at center top, #241108 0%, #0a0a0f 75%);
+            position: relative;
+        }
+
+        .calibration-screen h2 {
+            font-family: 'Bangers', cursive;
+            font-size: 2.5rem;
+            color: #ffab40;
+            text-shadow: 0 0 16px rgba(255,171,64,0.5);
+            margin-bottom: 8px;
+        }
+
+        .cal-instruction {
+            color: rgba(255,200,150,0.85);
+            font-size: 0.95rem;
+            line-height: 1.5;
+            max-width: 300px;
+            margin-bottom: 20px;
+        }
+
+        .phone-aim-icon {
+            font-size: 4.2rem;
+            margin-bottom: 12px;
+            animation: floatAim 2s ease-in-out infinite;
+        }
+
+        @keyframes floatAim {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-8px) rotate(-3deg); }
+        }
+
+        .cal-live-badge {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 14px;
+            padding: 12px 18px;
+            color: rgba(255,200,150,0.8);
+            font-size: 0.85rem;
+            margin-bottom: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            width: 100%;
+            max-width: 290px;
+        }
+
+        .sensor-status {
+            font-weight: 700;
+            font-size: 0.8rem;
+        }
+        .sensor-status.active { color: #69f0ae; }
+        .sensor-status.fallback { color: #ffab40; }
+
+        /* ===== Controller Active Screen ===== */
+        .controller-screen {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+            background: linear-gradient(180deg, #0d0d15 0%, #0a0a0f 100%);
+            position: relative;
+        }
+
+        .ctrl-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 16px;
+            background: rgba(255,255,255,0.03);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            z-index: 5;
+        }
+
+        .ctrl-header .game-label {
+            font-family: 'Bangers', cursive;
+            font-size: 1.1rem;
+            color: #ff3d00;
+            text-shadow: 0 0 10px rgba(255,61,0,0.3);
+        }
+
+        .ctrl-header .conn-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #69f0ae;
+            box-shadow: 0 0 8px rgba(105,240,174,0.6);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .ctrl-header .mode-badge {
+            font-size: 0.75rem;
+            background: rgba(255,61,0,0.15);
+            border: 1px solid rgba(255,61,0,0.3);
+            color: #ffab40;
+            padding: 2px 8px;
+            border-radius: 12px;
+            text-transform: uppercase;
+        }
+
+        /* ===== Interactive Area ===== */
+        .airmouse-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            padding: 12px;
+            overflow: hidden;
+        }
+
+        .crosshair-container {
+            width: 100%;
+            max-width: 320px;
+            aspect-ratio: 16 / 10;
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            position: relative;
+            background: radial-gradient(ellipse at center, rgba(255,61,0,0.05) 0%, rgba(0,0,0,0.3) 80%);
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        .crosshair-container::before,
+        .crosshair-container::after {
+            content: '';
+            position: absolute;
+            background: rgba(255,255,255,0.05);
+            pointer-events: none;
+        }
+
+        .crosshair-container::before {
+            width: 1px;
+            height: 100%;
+            left: 50%;
+            top: 0;
+        }
+
+        .crosshair-container::after {
+            width: 100%;
+            height: 1px;
+            top: 50%;
+            left: 0;
+        }
+
+        .crosshair-dot {
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,61,0,0.9) 0%, rgba(255,61,0,0) 70%);
+            border: 2px solid rgba(255,61,0,0.8);
+            transform: translate(-50%, -50%);
+            left: 50%;
+            top: 50%;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .crosshair-dot.slicing {
+            background: radial-gradient(circle, #ffea00 0%, rgba(255,100,0,0) 70%);
+            border-color: #ffab40;
+            box-shadow: 0 0 20px #ffea00;
+            width: 30px;
+            height: 30px;
+        }
+
+        .touch-overlay-hint {
+            position: absolute;
+            bottom: 8px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 0.7rem;
+            color: rgba(255,200,150,0.35);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            pointer-events: none;
+        }
+
+        .gyro-info {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .gyro-stat {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 10px;
+            padding: 6px 12px;
+            text-align: center;
+            min-width: 75px;
+        }
+
+        .gyro-stat .label {
+            font-size: 0.6rem;
+            color: rgba(255,200,150,0.4);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .gyro-stat .value {
+            font-family: 'Bangers', cursive;
+            font-size: 1.1rem;
+            color: #ffab40;
+        }
+
+        .slice-indicator {
+            margin-top: 8px;
+            font-family: 'Bangers', cursive;
+            font-size: 1.3rem;
+            color: rgba(255,200,150,0.2);
+            letter-spacing: 3px;
+            transition: all 0.15s;
+        }
+
+        .slice-indicator.active {
+            color: #ff3d00;
+            text-shadow: 0 0 15px rgba(255,61,0,0.6);
+            transform: scale(1.1);
+        }
+
+        .ctrl-footer {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 8px 16px 16px;
+            flex-wrap: wrap;
+        }
+
+        .ctrl-btn {
+            height: 48px;
+            padding: 0 18px;
+            border-radius: 24px;
+            border: 2px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.04);
+            color: rgba(255,200,150,0.7);
+            font-size: 0.85rem;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+
+        .ctrl-btn:active {
+            background: rgba(255,61,0,0.2);
+            border-color: rgba(255,61,0,0.4);
+            transform: scale(0.95);
+        }
+
+        .ctrl-btn.primary {
+            background: linear-gradient(135deg, rgba(255,61,0,0.25), rgba(255,109,0,0.2));
+            border-color: rgba(255,61,0,0.5);
+            color: #ffab40;
+        }
+
+        .ctrl-btn.active-btn {
+            background: rgba(105, 240, 174, 0.2);
+            border-color: rgba(105, 240, 174, 0.6);
+            color: #69f0ae;
+        }
+
+        .sensitivity-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            max-width: 300px;
+            margin: 4px auto 0;
+            padding: 0 16px;
+        }
+
+        .sensitivity-row label {
+            font-size: 0.7rem;
+            color: rgba(255,200,150,0.4);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            white-space: nowrap;
+        }
+
+        .sensitivity-row input[type="range"] {
+            flex: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 4px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 2px;
+            outline: none;
+        }
+
+        .sensitivity-row input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #ff3d00;
+            cursor: pointer;
+        }
+
+        .ctrl-gameover {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(8px);
+            z-index: 20;
+        }
+
+        .ctrl-gameover h2 {
+            font-family: 'Bangers', cursive;
+            font-size: 3rem;
+            color: #ff3d00;
+            text-shadow: 0 0 20px rgba(255,61,0,0.5);
+            margin-bottom: 12px;
+        }
+
+        .ctrl-gameover .go-score {
+            font-family: 'Bangers', cursive;
+            font-size: 4rem;
+            color: #ffab40;
+            margin-bottom: 24px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Join Screen -->
+    <div class="screen join-screen" id="joinScreen">
+        <h1>🍉 FRUIT NINJA</h1>
+        <p class="tagline">Air Mouse Controller</p>
+
+        <div class="input-group">
+            <label>Enter Room Code</label>
+            <input type="text" class="room-input" id="roomInput" placeholder="----" maxlength="4" autocomplete="off" autocapitalize="characters">
+        </div>
+
+        <button class="join-btn" id="joinBtn">🎮 Connect & Start</button>
+        <p class="status-msg" id="statusMsg"></p>
+    </div>
+
+    <!-- Calibration Screen (First step after connect) -->
+    <div class="screen calibration-screen" id="calibrationScreen">
+        <div class="phone-aim-icon">🎯</div>
+        <h2>AIM & CALIBRATE</h2>
+        <p class="cal-instruction">Hold your phone comfortably pointing straight at your PC screen, then tap below.</p>
+        
+        <button class="join-btn" id="btnRequestPermission" style="background:#2979ff; font-size:1rem; padding:12px; margin-bottom:14px; max-width:280px;">
+            🔓 Enable iPhone Motion Sensors
+        </button>
+
+        <div class="cal-live-badge">
+            <div id="sensorStateText" class="sensor-status active">✓ Gyroscope Ready</div>
+            <div style="display:flex; justify-content:space-around; margin-top:4px;">
+                <span>Tilt X: <strong id="calLiveX" style="color:#ffab40;">0°</strong></span>
+                <span>Tilt Y: <strong id="calLiveY" style="color:#ffab40;">0°</strong></span>
+            </div>
+            <div style="font-size:0.75rem; color:rgba(255,200,150,0.5); margin-top:2px;">
+                Motion detected: <strong id="calLiveAccel" style="color:#ffab40;">0</strong>
+            </div>
+        </div>
+
+        <button class="join-btn" id="startWithCalibrateBtn" style="font-size:1.15rem; padding:18px;">
+            🎯 Calibrate & Start Game
+        </button>
+    </div>
+
+    <!-- Controller Screen -->
+    <div class="controller-screen" id="controllerScreen">
+        <div class="ctrl-header">
+            <div class="conn-dot"></div>
+            <span class="game-label">🍉 AIR MOUSE</span>
+            <span class="mode-badge" id="modeBadge">Air Mouse</span>
+        </div>
+
+        <div class="airmouse-area">
+            <div class="crosshair-container" id="crosshairBox">
+                <div class="crosshair-dot" id="crosshairDot"></div>
+                <div class="touch-overlay-hint">Tilt phone or drag finger to slice</div>
+            </div>
+
+            <div class="gyro-info">
+                <div class="gyro-stat">
+                    <div class="label">Tilt X</div>
+                    <div class="value" id="gyroX">0°</div>
+                </div>
+                <div class="gyro-stat">
+                    <div class="label">Tilt Y</div>
+                    <div class="value" id="gyroY">0°</div>
+                </div>
+                <div class="gyro-stat">
+                    <div class="label">Speed</div>
+                    <div class="value" id="accelVal">0</div>
+                </div>
+            </div>
+
+            <div class="slice-indicator" id="sliceIndicator">⚔️ SLICE</div>
+        </div>
+
+        <div class="sensitivity-row">
+            <label>Sensitivity</label>
+            <input type="range" id="sensitivitySlider" min="0.5" max="3.5" step="0.1" value="1.8">
+        </div>
+
+        <div class="ctrl-footer">
+            <button class="ctrl-btn primary" id="btnCalibrate">🎯 Recalibrate</button>
+            <button class="ctrl-btn" id="btnSliceMode" title="Hold to slice manually">✋ Hold to Slice</button>
+            <button class="ctrl-btn" id="btnVibrate">📳</button>
+            <button class="ctrl-btn" id="btnFullscreen">⛶</button>
+        </div>
+
+        <!-- Game Over Overlay -->
+        <div class="ctrl-gameover" id="ctrlGameover">
+            <h2>GAME OVER</h2>
+            <div class="go-score" id="ctrlFinalScore">0</div>
+            <button class="join-btn" id="ctrlRestart">🔄 Play Again</button>
+        </div>
+    </div>
+
+    <script>
+    (function() {
+        'use strict';
+
+        // ===== Elements =====
+        const joinScreen = document.getElementById('joinScreen');
+        const calibrationScreen = document.getElementById('calibrationScreen');
+        const controllerScreen = document.getElementById('controllerScreen');
+        const roomInput = document.getElementById('roomInput');
+        const joinBtn = document.getElementById('joinBtn');
+        const startWithCalibrateBtn = document.getElementById('startWithCalibrateBtn');
+        const btnRequestPermission = document.getElementById('btnRequestPermission');
+        const statusMsg = document.getElementById('statusMsg');
+        const crosshairDot = document.getElementById('crosshairDot');
+        const crosshairBox = document.getElementById('crosshairBox');
+        const gyroXEl = document.getElementById('gyroX');
+        const gyroYEl = document.getElementById('gyroY');
+        const calLiveX = document.getElementById('calLiveX');
+        const calLiveY = document.getElementById('calLiveY');
+        const calLiveAccel = document.getElementById('calLiveAccel');
+        const accelValEl = document.getElementById('accelVal');
+        const sliceIndicator = document.getElementById('sliceIndicator');
+        const sensorStateText = document.getElementById('sensorStateText');
+        const modeBadge = document.getElementById('modeBadge');
+        const ctrlGameover = document.getElementById('ctrlGameover');
+        const ctrlFinalScore = document.getElementById('ctrlFinalScore');
+        const sensitivitySlider = document.getElementById('sensitivitySlider');
+
+        let vibrationEnabled = true;
+
+        // ===== Sensor State =====
+        let gyroActive = false;
+        let sensorEventsReceived = 0;
+        let calibrated = false;
+
+        let calBeta = 0;
+        let calGamma = 0;
+        let currentBeta = 0;
+        let currentGamma = 0;
+
+        let cursorX = 0.5;
+        let cursorY = 0.5;
+        let prevCursorX = 0.5;
+        let prevCursorY = 0.5;
+
+        let accelMagnitude = 0;
+        let isSlicing = false;
+        let sliceCooldown = 0;
+        let manualSlice = false;
+
+        let sensitivity = 1.8;
+        const SLASH_THRESHOLD = 15;
+        const SLASH_COOLDOWN_MS = 140;
+        const SLASH_DURATION_MS = 200;
+        const SMOOTHING = 0.35;
+
+        let isTouching = false;
+
+        // ===== Auto-fill room from URL =====
+        const params = new URLSearchParams(window.location.search);
+        const roomParam = params.get('room');
+        if (roomParam) {
+            roomInput.value = roomParam.toUpperCase();
+        }
+
+        // ===== Direct Global Cross-Network WebRTC Connection (PeerJS) =====
+        let peer = null;
+        let peerConn = null;
+
+        function initWebRTC(roomCode) {
+            try {
+                if (typeof Peer === 'undefined') {
+                    statusMsg.textContent = 'PeerJS loading...';
+                    return;
+                }
+
+                statusMsg.textContent = 'Connecting to game...';
+                statusMsg.className = 'status-msg';
+
+                const peerId = 'fn-ctrl-' + Math.random().toString(36).substring(2, 8);
+                peer = new Peer(peerId, {
+                    debug: 1,
+                    config: {
+                        iceServers: [
+                            { urls: 'stun:stun.l.google.com:19302' },
+                            { urls: 'stun:stun1.l.google.com:19302' },
+                            { urls: 'stun:stun2.l.google.com:19302' },
+                            { urls: 'stun:stun3.l.google.com:19302' },
+                            { urls: 'stun:stun4.l.google.com:19302' }
+                        ]
+                    }
+                });
+
+                peer.on('open', () => {
+                    const targetGameId = 'fn-game-' + roomCode.toLowerCase();
+                    const conn = peer.connect(targetGameId, { reliable: false });
+
+                    conn.on('open', () => {
+                        peerConn = conn;
+                        statusMsg.textContent = 'Connected!';
+                        statusMsg.className = 'status-msg success';
+                        showCalibrationScreen();
+                    });
+
+                    conn.on('data', (data) => {
+                        if (data.type === 'game-state') {
+                            if (data.state === 'gameover') {
+                                ctrlFinalScore.textContent = data.score;
+                                ctrlGameover.style.display = 'flex';
+                                if (vibrationEnabled && navigator.vibrate) navigator.vibrate([200, 100, 200]);
+                            } else if (data.state === 'playing') {
+                                ctrlGameover.style.display = 'none';
+                            }
+                        }
+                    });
+
+                    conn.on('close', () => {
+                        peerConn = null;
+                        statusMsg.textContent = 'Disconnected. Tap Connect to retry.';
+                        statusMsg.className = 'status-msg error';
+                    });
+                });
+
+                peer.on('error', (err) => {
+                    console.log('Peer error:', err);
+                    statusMsg.textContent = 'Room not found. Check code & retry.';
+                    statusMsg.className = 'status-msg error';
+                });
+            } catch (e) {
+                console.log('WebRTC exception:', e);
+            }
+        }
+
+        function sendInput(data) {
+            const payload = { type: 'controller-input', ...data };
+            if (peerConn && peerConn.open) {
+                peerConn.send(payload);
+            }
+        }
+
+        // ===== Request Sensors & Permissions on User Gesture =====
+        function requestSensorPermissions() {
+            if (typeof DeviceOrientationEvent !== 'undefined' &&
+                typeof DeviceOrientationEvent.requestPermission === 'function') {
+                DeviceOrientationEvent.requestPermission()
+                    .then(response => {
+                        if (response === 'granted') {
+                            bindSensorEvents();
+                            if (typeof DeviceMotionEvent !== 'undefined' &&
+                                typeof DeviceMotionEvent.requestPermission === 'function') {
+                                DeviceMotionEvent.requestPermission().catch(() => {});
+                            }
+                        }
+                    })
+                    .catch(err => {
+                        console.log('Permission error:', err);
+                    });
+            }
+
+            bindSensorEvents();
+        }
+
+        function bindSensorEvents() {
+            window.addEventListener('deviceorientation', handleOrientation, true);
+            window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+            window.addEventListener('devicemotion', handleMotion, true);
+            gyroActive = true;
+        }
+
+        bindSensorEvents();
+
+        // ===== Join Button Handler =====
+        joinBtn.addEventListener('click', () => {
+            const code = roomInput.value.trim().toUpperCase();
+            if (code.length !== 4) {
+                statusMsg.textContent = 'Enter a 4-character room code';
+                statusMsg.className = 'status-msg error';
+                return;
+            }
+            requestSensorPermissions();
+            initWebRTC(code);
+        });
+
+        roomInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') joinBtn.click();
+        });
+
+        function showCalibrationScreen() {
+            joinScreen.style.display = 'none';
+            calibrationScreen.style.display = 'flex';
+            controllerScreen.style.display = 'none';
+
+            setTimeout(() => {
+                if (sensorEventsReceived > 0) {
+                    if (sensorStateText) {
+                        sensorStateText.textContent = '✓ Gyroscope Active & Ready';
+                        sensorStateText.className = 'sensor-status active';
+                    }
+                    if (modeBadge) modeBadge.textContent = 'Air Mouse (Gyro)';
+                } else {
+                    if (sensorStateText) {
+                        sensorStateText.innerHTML = '⚠️ Motion Sensor waiting... Tap <strong>Enable iPhone Sensors</strong>';
+                        sensorStateText.className = 'sensor-status fallback';
+                    }
+                }
+            }, 500);
+        }
+
+        function showController() {
+            joinScreen.style.display = 'none';
+            calibrationScreen.style.display = 'none';
+            controllerScreen.style.display = 'flex';
+        }
+
+        // ===== Orientation Handler =====
+        function handleOrientation(event) {
+            sensorEventsReceived++;
+            let beta = event.beta || 0;
+            let gamma = event.gamma || 0;
+
+            currentBeta = beta;
+            currentGamma = gamma;
+
+            if (calLiveX) calLiveX.textContent = gamma.toFixed(1) + '°';
+            if (calLiveY) calLiveY.textContent = beta.toFixed(1) + '°';
+
+            if (!calibrated || isTouching) return;
+
+            let deltaGamma = gamma - calGamma;
+            let deltaBeta = beta - calBeta;
+
+            const rangeX = 30 / sensitivity;
+            const rangeY = 25 / sensitivity;
+
+            let rawX = 0.5 + (deltaGamma / rangeX) * 0.5;
+            let rawY = 0.5 + (deltaBeta / rangeY) * 0.5;
+
+            rawX = Math.max(0, Math.min(1, rawX));
+            rawY = Math.max(0, Math.min(1, rawY));
+
+            cursorX = cursorX + (rawX - cursorX) * SMOOTHING;
+            cursorY = cursorY + (rawY - cursorY) * SMOOTHING;
+        }
+
+        // ===== Motion Handler (Slash Detection) =====
+        function handleMotion(event) {
+            const acc = event.acceleration || event.accelerationIncludingGravity;
+            if (!acc) return;
+
+            const ax = acc.x || 0;
+            const ay = acc.y || 0;
+            const az = acc.z || 0;
+
+            accelMagnitude = Math.sqrt(ax * ax + ay * ay + az * az);
+
+            if (calLiveAccel) {
+                calLiveAccel.textContent = accelMagnitude.toFixed(1);
+            }
+
+            if (!calibrated) return;
+
+            const now = Date.now();
+            if (accelMagnitude > SLASH_THRESHOLD && now > sliceCooldown) {
+                isSlicing = true;
+                sliceCooldown = now + SLASH_COOLDOWN_MS;
+
+                if (vibrationEnabled && navigator.vibrate) {
+                    navigator.vibrate(30);
+                }
+
+                setTimeout(() => {
+                    if (!manualSlice && !isTouching) {
+                        isSlicing = false;
+                    }
+                }, SLASH_DURATION_MS);
+            }
+        }
+
+        // ===== Calibration =====
+        function calibrate() {
+            calBeta = currentBeta;
+            calGamma = currentGamma;
+            calibrated = true;
+            cursorX = 0.5;
+            cursorY = 0.5;
+            prevCursorX = 0.5;
+            prevCursorY = 0.5;
+
+            if (vibrationEnabled && navigator.vibrate) {
+                navigator.vibrate([60, 40, 60]);
+            }
+
+            const btn = document.getElementById('btnCalibrate');
+            if (btn) {
+                btn.classList.add('active-btn');
+                setTimeout(() => btn.classList.remove('active-btn'), 400);
+            }
+
+            sendInput({ action: 'calibrated' });
+            sendInput({ action: 'start-game' });
+        }
+
+        if (btnRequestPermission) {
+            btnRequestPermission.addEventListener('click', () => {
+                requestSensorPermissions();
+                if (btnRequestPermission) {
+                    btnRequestPermission.textContent = '✓ Sensor Access Requested';
+                    btnRequestPermission.style.background = '#00c853';
+                }
+            });
+        }
+
+        startWithCalibrateBtn.addEventListener('click', () => {
+            requestSensorPermissions();
+            calibrate();
+            showController();
+        });
+
+        // ===== Touch Controls Support =====
+        function updateTouchPos(e) {
+            const rect = crosshairBox.getBoundingClientRect();
+            const touch = e.touches[0];
+            if (!touch) return;
+            const x = (touch.clientX - rect.left) / rect.width;
+            const y = (touch.clientY - rect.top) / rect.height;
+            cursorX = Math.max(0, Math.min(1, x));
+            cursorY = Math.max(0, Math.min(1, y));
+        }
+
+        crosshairBox.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            isTouching = true;
+            manualSlice = true;
+            updateTouchPos(e);
+            if (vibrationEnabled && navigator.vibrate) navigator.vibrate(15);
+        }, { passive: false });
+
+        crosshairBox.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (isTouching) {
+                updateTouchPos(e);
+            }
+        }, { passive: false });
+
+        crosshairBox.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            isTouching = false;
+            manualSlice = false;
+        }, { passive: false });
+
+        // ===== Main Send Loop (60fps) =====
+        setInterval(() => {
+            if (!calibrated) return;
+
+            const active = isSlicing || manualSlice || isTouching;
+            updateUI(active);
+
+            sendInput({
+                action: 'swipe',
+                prevX: prevCursorX,
+                prevY: prevCursorY,
+                x: cursorX,
+                y: cursorY,
+                active: active,
+            });
+
+            prevCursorX = cursorX;
+            prevCursorY = cursorY;
+        }, 1000 / 60);
+
+        function updateUI(active) {
+            const dotX = cursorX * 100;
+            const dotY = cursorY * 100;
+            crosshairDot.style.left = dotX + '%';
+            crosshairDot.style.top = dotY + '%';
+
+            if (active) {
+                crosshairDot.classList.add('slicing');
+                sliceIndicator.classList.add('active');
+                sliceIndicator.textContent = '⚔️ SLICING!';
+            } else {
+                crosshairDot.classList.remove('slicing');
+                sliceIndicator.classList.remove('active');
+                sliceIndicator.textContent = '⚔️ SLICE';
+            }
+
+            gyroXEl.textContent = (currentGamma - calGamma).toFixed(1) + '°';
+            gyroYEl.textContent = (currentBeta - calBeta).toFixed(1) + '°';
+            accelValEl.textContent = accelMagnitude.toFixed(1);
+
+            if (accelMagnitude > SLASH_THRESHOLD) {
+                accelValEl.style.color = '#ff3d00';
+            } else {
+                accelValEl.style.color = '#ffab40';
+            }
+        }
+
+        // ===== Control Buttons =====
+        document.getElementById('btnCalibrate').addEventListener('click', () => {
+            calibrate();
+        });
+
+        const sliceBtn = document.getElementById('btnSliceMode');
+        sliceBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            manualSlice = true;
+            sliceBtn.classList.add('active-btn');
+            if (vibrationEnabled && navigator.vibrate) navigator.vibrate(20);
+        });
+        sliceBtn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            manualSlice = false;
+            sliceBtn.classList.remove('active-btn');
+        });
+        sliceBtn.addEventListener('mousedown', () => {
+            manualSlice = true;
+            sliceBtn.classList.add('active-btn');
+        });
+        sliceBtn.addEventListener('mouseup', () => {
+            manualSlice = false;
+            sliceBtn.classList.remove('active-btn');
+        });
+
+        document.getElementById('btnVibrate').addEventListener('click', () => {
+            vibrationEnabled = !vibrationEnabled;
+            document.getElementById('btnVibrate').textContent = vibrationEnabled ? '📳' : '🔇';
+            if (vibrationEnabled && navigator.vibrate) navigator.vibrate(50);
+        });
+
+        document.getElementById('btnFullscreen').addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            } else {
+                document.exitFullscreen();
+            }
+        });
+
+        sensitivitySlider.addEventListener('input', (e) => {
+            sensitivity = parseFloat(e.target.value);
+        });
+
+        document.getElementById('ctrlRestart').addEventListener('click', () => {
+            ctrlGameover.style.display = 'none';
+        });
+
+        document.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+    })();
+    </script>
+</body>
+</html>
